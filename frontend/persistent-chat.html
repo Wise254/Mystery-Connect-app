@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mystery Connect - Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            border-bottom: 1px solid rgba(107, 70, 193, 0.3);
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6B46C1;
+            padding: 5px 10px;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            color: #D69E2E;
+            transform: translateX(-3px);
+        }
+
+        .partner-info {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .partner-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6B46C1 0%, #805AD5 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+            border: 2px solid #D69E2E;
+        }
+
+        .partner-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .partner-details h3 {
+            color: #F7FAFC;
+            font-size: 16px;
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .partner-details p {
+            color: #A0AEC0;
+            font-size: 12px;
+        }
+
+        /* 🔧 ADDED: Previously interacted badge in header */
+        .interacted-header-badge {
+            background: linear-gradient(45deg, #D69E2E, #F6E05E);
+            color: #1A202C;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .online-status {
+            color: #48bb78;
+            font-size: 12px;
+        }
+
+        .offline-status {
+            color: #cbd5e0;
+            font-size: 12px;
+        }
+
+        .typing-indicator {
+            color: #6B46C1;
+            font-size: 12px;
+            font-style: italic;
+        }
+
+        /* Progress Container */
+        .progress-container {
+            background: rgba(15, 23, 42, 0.8);
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(107, 70, 193, 0.2);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6B46C1, #D69E2E);
+            transition: width 0.5s ease;
+            border-radius: 4px;
+        }
+
+        .milestone-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #A0AEC0;
+        }
+
+        .milestone {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s;
+        }
+
+        .milestone.unlocked {
+            color: #48bb78;
+        }
+
+        .milestone.unlocked i {
+            color: #48bb78;
+        }
+
+        .milestone.locked {
+            color: #718096;
+        }
+
+        /* Reveal Banner */
+        .reveal-banner {
+            background: linear-gradient(45deg, #D69E2E, #F6E05E);
+            padding: 12px 20px;
+            text-align: center;
+            color: #1A202C;
+            font-size: 14px;
+            font-weight: bold;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Messages Container */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .message {
+            max-width: 70%;
+            display: flex;
+            flex-direction: column;
+            animation: messageSlide 0.3s ease;
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.sent {
+            align-self: flex-end;
+        }
+
+        .message.received {
+            align-self: flex-start;
+        }
+
+        .message-bubble {
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        .message.sent .message-bubble {
+            background: linear-gradient(135deg, #6B46C1 0%, #805AD5 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.received .message-bubble {
+            background: rgba(255, 255, 255, 0.95);
+            color: #1A202C;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #A0AEC0;
+            margin-top: 4px;
+            padding: 0 5px;
+        }
+
+        .message.sent .message-time {
+            text-align: right;
+        }
+
+        .message-status {
+            font-size: 11px;
+            margin-left: 5px;
+        }
+
+        .date-separator {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .date-separator span {
+            background: rgba(107, 70, 193, 0.3);
+            color: #E2E8F0;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            backdrop-filter: blur(5px);
+        }
+
+        /* System Message */
+        .system-message {
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .system-message span {
+            background: rgba(214, 158, 46, 0.2);
+            color: #D69E2E;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            border: 1px solid rgba(214, 158, 46, 0.3);
+        }
+
+        .system-message.success span {
+            background: rgba(72, 187, 120, 0.2);
+            color: #48bb78;
+            border-color: rgba(72, 187, 120, 0.3);
+        }
+
+        /* Chat Footer */
+        .chat-footer {
+            background: rgba(15, 23, 42, 0.95);
+            padding: 15px 20px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            border-top: 1px solid rgba(107, 70, 193, 0.3);
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 1px solid rgba(107, 70, 193, 0.3);
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+            background: rgba(255, 255, 255, 0.05);
+            color: #F7FAFC;
+        }
+
+        .message-input:focus {
+            border-color: #6B46C1;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .message-input::placeholder {
+            color: #718096;
+        }
+
+        .send-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6B46C1, #805AD5);
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(107, 70, 193, 0.4);
+        }
+
+        .send-btn:disabled {
+            background: #4A5568;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #A0AEC0;
+        }
+
+        /* Error Banner */
+        .error-banner {
+            background: rgba(229, 62, 62, 0.9);
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            animation: slideDown 0.3s ease;
+        }
+
+        /* 🔧 ADDED: Points notification */
+        .points-notification {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: linear-gradient(45deg, #D69E2E, #F6E05E);
+            color: #1A202C;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            z-index: 1000;
+            animation: slideInRight 0.3s ease;
+            box-shadow: 0 5px 20px rgba(214, 158, 46, 0.4);
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .message {
+                max-width: 85%;
+            }
+            
+            .milestone-info {
+                font-size: 10px;
+            }
+            
+            .partner-details h3 {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="partner-info" id="partnerInfo">
+            <div class="partner-avatar" id="partnerAvatar">?</div>
+            <div class="partner-details">
+                <h3 id="partnerName">
+                    Loading...
+                    <!-- 🔧 ADDED: Previously interacted badge container -->
+                    <span id="interactedBadge" style="display: none;"></span>
+                </h3>
+                <p id="partnerStatus">
+                    <span class="offline-status">● Offline</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Container -->
+    <div class="progress-container" id="progressContainer">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+        <div class="milestone-info">
+            <div class="milestone locked" id="milestone1">
+                <i class="fas fa-venus-mars"></i> Gender (5)
+            </div>
+            <div class="milestone locked" id="milestone2">
+                <i class="fas fa-map-pin"></i> Location (10)
+            </div>
+            <div class="milestone locked" id="milestone3">
+                <i class="fas fa-user-circle"></i> Avatar (20)
+            </div>
+            <div class="milestone locked" id="milestone4">
+                <i class="fas fa-id-card"></i> Full Profile (30)
+            </div>
+        </div>
+    </div>
+
+    <div id="revealBanner" class="reveal-banner" style="display: none;"></div>
+    <div id="errorBanner" class="error-banner" style="display: none;"></div>
+
+    <div class="messages-container" id="messagesContainer">
+        <div class="loading">Loading messages...</div>
+    </div>
+
+    <div class="chat-footer">
+        <input 
+            type="text" 
+            class="message-input" 
+            id="messageInput" 
+            placeholder="Type a message..."
+            autocomplete="off"
+        >
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const API_URL = window.location.origin;
+        const token = localStorage.getItem('mysteryToken');
+        
+        if (!token) {
+            window.location.href = '/auth.html';
+        }
+
+        // Get chatId from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const chatId = urlParams.get('chatId');
+        
+        if (!chatId) {
+            alert('No chat specified');
+            window.location.href = '/explore.html';
+        }
+
+        let socket = null;
+        let currentUserId = null;
+        let partner = null;
+        let messageCount = 0;
+        let revealLevel = 0;
+        let isPartnerOnline = false;
+        let isPartnerTyping = false;
+        let typingTimeout = null;
+        let hasInteractedBefore = false;
+
+        // Initialize socket connection
+        function initSocket() {
+            socket = io(API_URL, {
+                auth: { token }
+            });
+
+            socket.on('connect', () => {
+                console.log('✅ Socket connected');
+                socket.emit('joinPersistentChat', { chatId });
+            });
+
+            socket.on('chatHistory', handleChatHistory);
+            socket.on('newPersistentMessage', handleNewMessage);
+            socket.on('messageSent', handleMessageSent);
+            socket.on('partnerOnline', handlePartnerStatus);
+            socket.on('partnerTyping', handlePartnerTyping);
+            socket.on('revealUpdate', handleRevealUpdate);
+            socket.on('messageReadReceipt', (data) => {
+                const messages = document.querySelectorAll('.message.sent .message-status');
+                messages.forEach(status => {
+                    status.textContent = '✓✓';
+                });
+            });
+            socket.on('error', handleError);
+
+            socket.on('disconnect', () => {
+                console.log('Socket disconnected');
+            });
+        }
+
+        // Handle chat history
+        function handleChatHistory(data) {
+            console.log('📜 Chat history:', data);
+            
+            currentUserId = socket.userId;
+            partner = data.partner;
+            messageCount = data.messageCount || 0;
+            revealLevel = data.revealLevel || 0;
+            hasInteractedBefore = data.hasInteractedBefore || false;
+            
+            updatePartnerInfo();
+            updateProgressBar();
+            
+            // 🔧 ADDED: Show previously interacted badge if applicable
+            if (hasInteractedBefore) {
+                const badge = document.getElementById('interactedBadge');
+                badge.className = 'interacted-header-badge';
+                badge.innerHTML = '🔄 Chatted Before';
+                badge.style.display = 'inline-flex';
+            }
+            
+            if (data.messages && data.messages.length > 0) {
+                renderMessages(data.messages);
+            } else {
+                document.getElementById('messagesContainer').innerHTML = `
+                    <div style="text-align: center; color: #A0AEC0; padding: 40px;">
+                        <p style="font-size: 18px; margin-bottom: 10px;">✨ No messages yet</p>
+                        <p style="font-size: 14px;">Send a message to start the conversation!</p>
+                        <p style="font-size: 13px; margin-top: 20px; color: #718096;">
+                            💡 Send 5 messages to reveal gender, 10 for location, 20 for avatar, 30 for full profile!
+                        </p>
+                    </div>
+                `;
+            }
+        }
+
+        // Handle new message
+        function handleNewMessage(message) {
+            addMessageToContainer(message, 'received');
+            messageCount++;
+            updateProgressBar();
+            
+            socket.emit('messageRead', { chatId, messageId: message._id });
+        }
+
+        // Handle sent message confirmation
+        function handleMessageSent(message) {
+            addMessageToContainer(message, 'sent');
+            messageCount++;
+            updateProgressBar();
+        }
+
+        // Handle partner online status
+        function handlePartnerStatus(data) {
+            isPartnerOnline = data.online;
+            updatePartnerStatus();
+        }
+
+        // Handle partner typing
+        function handlePartnerTyping(data) {
+            isPartnerTyping = data.isTyping;
+            updatePartnerStatus();
+        }
+
+        // 🔧 FIXED: Handle reveal update with points
+        function handleRevealUpdate(data) {
+            revealLevel = data.level;
+            messageCount = data.messageCount;
+            
+            updateProgressBar();
+            
+            const banner = document.getElementById('revealBanner');
+            let message = '';
+            let showPoints = false;
+            
+            if (data.level === 1) {
+                message = `🎉 Gender revealed: ${data.revealedInfo.gender}`;
+            } else if (data.level === 2) {
+                message = `📍 Location revealed: ${data.revealedInfo.location || data.revealedInfo.country}`;
+            } else if (data.level === 3) {
+                message = `🖼️ Avatar unlocked!`;
+                updatePartnerAvatar(data.revealedInfo.avatar);
+            } else if (data.level === 4) {
+                // 🔧 ADDED: Include real name in full reveal
+                const fullInfo = data.revealedInfo.fullProfile;
+                message = `✨ Full profile unlocked! `;
+                if (fullInfo?.realName) {
+                    message += `Real name: ${fullInfo.realName}. `;
+                }
+                message += `+50 points!`;
+                showPoints = true;
+            }
+            
+            if (message) {
+                banner.textContent = message;
+                banner.style.display = 'block';
+                setTimeout(() => {
+                    banner.style.display = 'none';
+                }, 5000);
+            }
+            
+            // 🔧 ADDED: Show points notification
+            if (data.pointsEarned || showPoints) {
+                showPointsNotification(data.pointsEarned || 50);
+            }
+            
+            if (data.revealedInfo) {
+                Object.assign(partner, data.revealedInfo);
+                updatePartnerInfo();
+            }
+        }
+
+        // 🔧 ADDED: Show points notification
+        function showPointsNotification(points) {
+            const notification = document.createElement('div');
+            notification.className = 'points-notification';
+            notification.innerHTML = `✨ +${points} points!`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideInRight 0.3s ease reverse';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Handle error
+        function handleError(data) {
+            const banner = document.getElementById('errorBanner');
+            banner.textContent = data.message;
+            banner.style.display = 'block';
+            setTimeout(() => {
+                banner.style.display = 'none';
+            }, 3000);
+        }
+
+        // Update partner info display
+        function updatePartnerInfo() {
+            const nameEl = document.getElementById('partnerName');
+            
+            // 🔧 ADDED: Show real name if fully revealed
+            if (revealLevel >= 4 && partner?.realName) {
+                nameEl.innerHTML = `${partner.realName} (${partner.username})`;
+            } else {
+                nameEl.innerHTML = partner?.username || 'Unknown';
+            }
+            
+            // Re-add badge if needed
+            if (hasInteractedBefore) {
+                const badge = document.createElement('span');
+                badge.className = 'interacted-header-badge';
+                badge.innerHTML = '🔄 Chatted Before';
+                badge.style.marginLeft = '8px';
+                nameEl.appendChild(badge);
+            }
+            
+            const avatarEl = document.getElementById('partnerAvatar');
+            if (partner?.avatar && revealLevel >= 3) {
+                avatarEl.innerHTML = `<img src="${partner.avatar}" alt="${partner.username || 'Partner'}">`;
+            } else {
+                avatarEl.textContent = partner?.username?.charAt(0).toUpperCase() || '?';
+            }
+            
+            updatePartnerStatus();
+        }
+
+        // Update partner avatar
+        function updatePartnerAvatar(avatar) {
+            partner.avatar = avatar;
+            const avatarEl = document.getElementById('partnerAvatar');
+            avatarEl.innerHTML = `<img src="${avatar}" alt="${partner.username}">`;
+        }
+
+        // Update partner status display
+        function updatePartnerStatus() {
+            const statusEl = document.getElementById('partnerStatus');
+            
+            if (isPartnerTyping) {
+                statusEl.innerHTML = '<span class="typing-indicator">typing...</span>';
+            } else if (isPartnerOnline) {
+                statusEl.innerHTML = '<span class="online-status">● Online</span>';
+            } else {
+                statusEl.innerHTML = '<span class="offline-status">● Offline</span>';
+            }
+        }
+
+        // Update progress bar
+        function updateProgressBar() {
+            const progress = Math.min((messageCount / 30) * 100, 100);
+            document.getElementById('progressFill').style.width = progress + '%';
+            
+            updateMilestone('milestone1', messageCount >= 5, '👤 Gender');
+            updateMilestone('milestone2', messageCount >= 10, '📍 Location');
+            updateMilestone('milestone3', messageCount >= 20, '🖼️ Avatar');
+            updateMilestone('milestone4', messageCount >= 30, '✨ Full Profile');
+        }
+
+        // Update milestone display
+        function updateMilestone(id, unlocked, label) {
+            const el = document.getElementById(id);
+            if (unlocked) {
+                el.className = 'milestone unlocked';
+                el.innerHTML = `<i class="fas fa-check-circle"></i> ${label}`;
+            } else {
+                el.className = 'milestone locked';
+                const count = id === 'milestone1' ? 5 : id === 'milestone2' ? 10 : id === 'milestone3' ? 20 : 30;
+                el.innerHTML = `<i class="far fa-circle"></i> ${label} (${count})`;
+            }
+        }
+
+        // Render messages
+        function renderMessages(messages) {
+            const container = document.getElementById('messagesContainer');
+            container.innerHTML = '';
+            
+            let lastDate = null;
+            
+            messages.forEach(message => {
+                const messageDate = new Date(message.createdAt).toDateString();
+                if (messageDate !== lastDate) {
+                    addDateSeparator(message.createdAt);
+                    lastDate = messageDate;
+                }
+                
+                const type = message.sender === currentUserId ? 'sent' : 'received';
+                addMessageToContainer(message, type);
+            });
+            
+            scrollToBottom();
+        }
+
+        // Add date separator
+        function addDateSeparator(timestamp) {
+            const container = document.getElementById('messagesContainer');
+            const date = new Date(timestamp);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            let dateStr;
+            if (date.toDateString() === today.toDateString()) {
+                dateStr = 'Today';
+            } else if (date.toDateString() === yesterday.toDateString()) {
+                dateStr = 'Yesterday';
+            } else {
+                dateStr = date.toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    day: 'numeric',
+                    year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+                });
+            }
+            
+            const separator = document.createElement('div');
+            separator.className = 'date-separator';
+            separator.innerHTML = `<span>${dateStr}</span>`;
+            container.appendChild(separator);
+        }
+
+        // Add message to container
+        function addMessageToContainer(message, type) {
+            const container = document.getElementById('messagesContainer');
+            
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${type}`;
+            
+            const time = new Date(message.createdAt).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            
+            messageEl.innerHTML = `
+                <div class="message-bubble">${escapeHtml(message.content)}</div>
+                <div class="message-time">
+                    ${time}
+                    ${type === 'sent' ? 
+                        `<span class="message-status">${message.read ? '✓✓' : '✓'}</span>` : 
+                        ''
+                    }
+                </div>
+            `;
+            
+            container.appendChild(messageEl);
+            scrollToBottom();
+        }
+
+        // Add system message
+        function addSystemMessage(text, type = 'info') {
+            const container = document.getElementById('messagesContainer');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `system-message ${type}`;
+            msgDiv.innerHTML = `<span>${text}</span>`;
+            container.appendChild(msgDiv);
+            scrollToBottom();
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Scroll to bottom
+        function scrollToBottom() {
+            const container = document.getElementById('messagesContainer');
+            setTimeout(() => {
+                container.scrollTop = container.scrollHeight;
+            }, 100);
+        }
+
+        // Send message
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+            
+            if (!content || !socket) return;
+            
+            socket.emit('persistentChatMessage', {
+                chatId,
+                content
+            });
+            
+            input.value = '';
+            input.focus();
+            
+            if (typingTimeout) {
+                clearTimeout(typingTimeout);
+                socket.emit('persistentTyping', { chatId, isTyping: false });
+            }
+        }
+
+        // Handle typing
+        function handleTyping() {
+            if (!socket) return;
+            
+            socket.emit('persistentTyping', { chatId, isTyping: true });
+            
+            if (typingTimeout) {
+                clearTimeout(typingTimeout);
+            }
+            
+            typingTimeout = setTimeout(() => {
+                socket.emit('persistentTyping', { chatId, isTyping: false });
+            }, 1000);
+        }
+
+        // Go back
+        function goBack() {
+            if (socket) {
+                socket.emit('leavePersistentChat', { chatId });
+                socket.disconnect();
+            }
+            window.location.href = '/explore.html';
+        }
+
+        // Event listeners
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        document.getElementById('messageInput').addEventListener('input', handleTyping);
+
+        // Initialize
+        initSocket();
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (socket) {
+                socket.emit('leavePersistentChat', { chatId });
+            }
+        });
+    </script>
+</body>
+</html>

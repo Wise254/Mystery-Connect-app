@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mystery Connect - Explore</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .level-badge {
+            background: linear-gradient(45deg, #D69E2E, #F6E05E);
+            color: #1A202C;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: #48bb78;
+            color: white;
+            position: relative;
+        }
+
+        .btn-secondary:hover {
+            background: #38a169;
+        }
+
+        .unread-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #e53e3e;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+            min-width: 20px;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px 25px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-around;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .explore-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .explorer-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .explorer-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        }
+
+        /* 🔧 ADDED: Previously interacted badge */
+        .interacted-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: linear-gradient(45deg, #D69E2E, #F6E05E);
+            color: #1A202C;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            z-index: 2;
+        }
+
+        .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 36px;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        /* 🔧 ADDED: Online indicator on avatar */
+        .online-indicator {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #48bb78;
+            border: 2px solid white;
+        }
+
+        .offline-indicator {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #cbd5e0;
+            border: 2px solid white;
+        }
+
+        .explorer-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .explorer-card p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .status.online {
+            background: #48bb78;
+        }
+
+        .status.offline {
+            background: #cbd5e0;
+        }
+
+        /* 🔧 ADDED: Level display on card */
+        .explorer-level {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 8px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: #333;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .chat-list {
+            list-style: none;
+        }
+
+        .chat-item {
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .chat-item:hover {
+            background: #f7fafc;
+        }
+
+        .chat-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .chat-info {
+            flex: 1;
+        }
+
+        .chat-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chat-last-message {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .chat-meta {
+            text-align: right;
+        }
+
+        .chat-time {
+            color: #999;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 18px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            color: white;
+        }
+
+        .empty-state h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            opacity: 0.9;
+        }
+
+        .error-message {
+            background: rgba(229, 62, 62, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        /* 🔧 ADDED: Filter tabs */
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .filter-tab:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .filter-tab.active {
+            background: #667eea;
+            border-color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .explore-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+            
+            .avatar {
+                width: 80px;
+                height: 80px;
+                font-size: 28px;
+            }
+            
+            .stats-bar {
+                flex-wrap: wrap;
+                gap: 20px;
+            }
+            
+            .stat-item {
+                min-width: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                🌍 Explore
+                <span class="level-badge" id="userLevelDisplay">Level 3</span>
+            </h1>
+            <div class="header-buttons">
+                <button class="btn btn-secondary" id="myChatsBtn">
+                    💬 My Chats
+                    <span class="unread-badge" id="totalUnread" style="display: none;">0</span>
+                </button>
+                <button class="btn btn-primary" id="backToDashboard">← Dashboard</button>
+            </div>
+        </div>
+
+        <!-- 🔧 ADDED: Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="totalExplorers">0</div>
+                <div class="stat-label">Explorers Online</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="activeChats">0</div>
+                <div class="stat-label">Your Active Chats</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="yourPoints">0</div>
+                <div class="stat-label">Your Points</div>
+            </div>
+        </div>
+
+        <!-- 🔧 ADDED: Filter Tabs -->
+        <div class="filter-tabs">
+            <div class="filter-tab active" data-filter="all">All Explorers</div>
+            <div class="filter-tab" data-filter="online">Online Now</div>
+            <div class="filter-tab" data-filter="interacted">Previously Chatted</div>
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+
+        <div id="exploreContent">
+            <div class="loading">Loading explorers...</div>
+        </div>
+    </div>
+
+    <!-- My Chats Modal -->
+    <div class="modal" id="chatsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>My Chats</h2>
+                <button class="close-btn" onclick="closeChatsModal()">&times;</button>
+            </div>
+            <div id="chatsList"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        const token = localStorage.getItem('mysteryToken');
+        
+        // Check authentication
+        if (!token) {
+            window.location.href = '/auth.html';
+        }
+
+        let currentUser = null;
+        let explorePartners = [];
+        let filteredPartners = [];
+        let persistentChats = [];
+        let currentFilter = 'all';
+
+        // Initialize page
+        async function init() {
+            await loadCurrentUser();
+            await loadUserProgression();
+            await loadExplorePartners();
+            await loadPersistentChats();
+            updateStats();
+            setupFilterTabs();
+        }
+
+        // 🔧 ADDED: Load current user data
+        async function loadCurrentUser() {
+            try {
+                const userData = JSON.parse(localStorage.getItem('mysteryUser') || '{}');
+                document.getElementById('userLevelDisplay').textContent = `Level ${userData.level || 3}`;
+                document.getElementById('yourPoints').textContent = userData.points || 0;
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+
+        // Load user progression
+        async function loadUserProgression() {
+            try {
+                const response = await fetch(`${API_URL}/api/user/progression`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load progression');
+                
+                const data = await response.json();
+                currentUser = data;
+                
+                // 🔧 FIXED: Check if user has unlocked explore
+                if (!data.hasUnlockedExplore) {
+                    showError('You need to complete 30 minutes in Deep Chat to unlock Explore!');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard.html';
+                    }, 3000);
+                    return;
+                }
+            } catch (error) {
+                console.error('Error loading progression:', error);
+            }
+        }
+
+        // Load explore partners
+        async function loadExplorePartners() {
+            try {
+                const response = await fetch(`${API_URL}/api/explore/partners`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load partners');
+                
+                const data = await response.json();
+                explorePartners = data.partners || [];
+                applyFilter();
+            } catch (error) {
+                console.error('Error loading partners:', error);
+                document.getElementById('exploreContent').innerHTML = `
+                    <div class="empty-state">
+                        <h3>Error Loading Explorers</h3>
+                        <p>Please try again later</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Load persistent chats
+        async function loadPersistentChats() {
+            try {
+                const response = await fetch(`${API_URL}/api/persistent-chats`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load chats');
+                
+                const data = await response.json();
+                persistentChats = data.chats || [];
+                updateUnreadBadge();
+                updateStats();
+            } catch (error) {
+                console.error('Error loading chats:', error);
+            }
+        }
+
+        // 🔧 ADDED: Update stats display
+        function updateStats() {
+            const onlineCount = explorePartners.filter(p => isUserOnline(p.lastActive)).length;
+            document.getElementById('totalExplorers').textContent = onlineCount;
+            document.getElementById('activeChats').textContent = persistentChats.length;
+            
+            const userData = JSON.parse(localStorage.getItem('mysteryUser') || '{}');
+            document.getElementById('yourPoints').textContent = userData.points || 0;
+        }
+
+        // Update total unread badge
+        function updateUnreadBadge() {
+            const totalUnread = persistentChats.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0);
+            const badge = document.getElementById('totalUnread');
+            
+            if (totalUnread > 0) {
+                badge.textContent = totalUnread > 99 ? '99+' : totalUnread;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // 🔧 ADDED: Setup filter tabs
+        function setupFilterTabs() {
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentFilter = tab.dataset.filter;
+                    applyFilter();
+                });
+            });
+        }
+
+        // 🔧 ADDED: Apply filter to partners
+        function applyFilter() {
+            switch (currentFilter) {
+                case 'online':
+                    filteredPartners = explorePartners.filter(p => isUserOnline(p.lastActive));
+                    break;
+                case 'interacted':
+                    filteredPartners = explorePartners.filter(p => p.hasInteractedBefore === true);
+                    break;
+                default:
+                    filteredPartners = [...explorePartners];
+            }
+            renderExploreGrid();
+        }
+
+        // Render explore grid
+        function renderExploreGrid() {
+            const container = document.getElementById('exploreContent');
+            
+            if (filteredPartners.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No Explorers Found</h3>
+                        <p>${getEmptyStateMessage()}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const grid = document.createElement('div');
+            grid.className = 'explore-grid';
+            
+            filteredPartners.forEach(partner => {
+                const card = createExplorerCard(partner);
+                grid.appendChild(card);
+            });
+            
+            container.innerHTML = '';
+            container.appendChild(grid);
+        }
+
+        // 🔧 ADDED: Get empty state message based on filter
+        function getEmptyStateMessage() {
+            switch (currentFilter) {
+                case 'online':
+                    return 'No explorers are currently online. Check back later!';
+                case 'interacted':
+                    return 'You haven\'t chatted with any explorers yet. Complete some Quick or Deep chats first!';
+                default:
+                    return 'Check back later for new people to connect with!';
+            }
+        }
+
+        // Create explorer card
+        function createExplorerCard(partner) {
+            const card = document.createElement('div');
+            card.className = 'explorer-card';
+            card.onclick = () => startChat(partner._id);
+            
+            const isOnline = isUserOnline(partner.lastActive);
+            
+            // 🔧 ADDED: Previously interacted badge
+            if (partner.hasInteractedBefore) {
+                const badge = document.createElement('div');
+                badge.className = 'interacted-badge';
+                badge.innerHTML = '🔄 Chatted Before';
+                card.appendChild(badge);
+            }
+            
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'avatar';
+            avatarDiv.innerHTML = partner.avatar ? 
+                `<img src="${partner.avatar}" alt="${partner.username}">` : 
+                partner.username.charAt(0).toUpperCase();
+            
+            // Add online/offline indicator
+            const indicator = document.createElement('div');
+            indicator.className = isOnline ? 'online-indicator' : 'offline-indicator';
+            avatarDiv.appendChild(indicator);
+            
+            card.appendChild(avatarDiv);
+            
+            const nameEl = document.createElement('h3');
+            nameEl.textContent = partner.username;
+            card.appendChild(nameEl);
+            
+            if (partner.location) {
+                const locationEl = document.createElement('p');
+                locationEl.innerHTML = `📍 ${partner.location}`;
+                card.appendChild(locationEl);
+            }
+            
+            if (partner.gender && partner.gender !== 'prefer-not-to-say') {
+                const genderEl = document.createElement('p');
+                genderEl.innerHTML = `👤 ${partner.gender}`;
+                card.appendChild(genderEl);
+            }
+            
+            // 🔧 ADDED: Level display
+            const levelEl = document.createElement('div');
+            levelEl.className = 'explorer-level';
+            levelEl.textContent = `Level ${partner.level || '?'}`;
+            card.appendChild(levelEl);
+            
+            const statusEl = document.createElement('p');
+            statusEl.innerHTML = `
+                <span class="status ${isOnline ? 'online' : 'offline'}"></span>
+                ${isOnline ? 'Online' : 'Offline'}
+            `;
+            card.appendChild(statusEl);
+            
+            return card;
+        }
+
+        // Check if user is online (active in last 5 minutes)
+        function isUserOnline(lastActive) {
+            if (!lastActive) return false;
+            const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+            return new Date(lastActive) > fiveMinutesAgo;
+        }
+
+        // Start chat with partner
+        async function startChat(partnerId) {
+            try {
+                // Show loading state
+                const btn = event.target.closest('.explorer-card');
+                if (btn) btn.style.opacity = '0.6';
+                
+                const response = await fetch(`${API_URL}/api/explore/start-chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ partnerId })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to start chat');
+                }
+                
+                const data = await response.json();
+                
+                // 🔧 ADDED: Show "previously chatted" notification if applicable
+                if (data.hasInteractedBefore) {
+                    console.log('🔄 Chatting with someone you\'ve met before!');
+                }
+                
+                // Redirect to chat page
+                window.location.href = `/persistent-chat.html?chatId=${data.chatId}`;
+                
+            } catch (error) {
+                console.error('Error starting chat:', error);
+                showError(error.message);
+                if (btn) btn.style.opacity = '1';
+            }
+        }
+
+        // Show chats modal
+        function showChatsModal() {
+            const modal = document.getElementById('chatsModal');
+            const chatsList = document.getElementById('chatsList');
+            
+            if (persistentChats.length === 0) {
+                chatsList.innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: #666;">
+                        <p>No active chats yet</p>
+                        <p style="margin-top: 10px; font-size: 14px;">Start exploring to connect with others!</p>
+                    </div>
+                `;
+            } else {
+                const list = document.createElement('ul');
+                list.className = 'chat-list';
+                
+                persistentChats.forEach(chat => {
+                    const item = createChatListItem(chat);
+                    list.appendChild(item);
+                });
+                
+                chatsList.innerHTML = '';
+                chatsList.appendChild(list);
+            }
+            
+            modal.classList.add('active');
+        }
+
+        // Create chat list item
+        function createChatListItem(chat) {
+            const item = document.createElement('li');
+            item.className = 'chat-item';
+            item.onclick = () => openChat(chat._id);
+            
+            const timeAgo = formatTimeAgo(chat.lastMessage?.timestamp || chat.createdAt);
+            const lastMessagePreview = chat.lastMessage?.content || 'Start chatting!';
+            
+            // 🔧 ADDED: Previously interacted indicator in chat list
+            const interactedBadge = chat.hasInteractedBefore ? '🔄' : '';
+            
+            item.innerHTML = `
+                <div class="chat-avatar">
+                    ${chat.partner?.avatar ? 
+                        `<img src="${chat.partner.avatar}" alt="${chat.partner.username}" style="width:100%;height:100%;border-radius:50%;">` : 
+                        chat.partner?.username?.charAt(0).toUpperCase() || '?'
+                    }
+                </div>
+                <div class="chat-info">
+                    <div class="chat-name">
+                        ${chat.partner?.username || 'Unknown User'}
+                        ${interactedBadge ? `<span style="font-size:12px;" title="Chatted before">${interactedBadge}</span>` : ''}
+                    </div>
+                    <div class="chat-last-message">${lastMessagePreview}</div>
+                </div>
+                <div class="chat-meta">
+                    <div class="chat-time">${timeAgo}</div>
+                    ${chat.unreadCount > 0 ? 
+                        `<span class="unread-badge" style="position:static;">${chat.unreadCount}</span>` : 
+                        ''
+                    }
+                </div>
+            `;
+            
+            return item;
+        }
+
+        // Open chat
+        function openChat(chatId) {
+            window.location.href = `/persistent-chat.html?chatId=${chatId}`;
+        }
+
+        // Format time ago
+        function formatTimeAgo(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000);
+            
+            if (diff < 60) return 'just now';
+            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+            if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        // Show error
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            setTimeout(() => {
+                errorEl.style.display = 'none';
+            }, 5000);
+        }
+
+        // Close modal
+        function closeChatsModal() {
+            document.getElementById('chatsModal').classList.remove('active');
+        }
+
+        // Event listeners
+        document.getElementById('myChatsBtn').addEventListener('click', showChatsModal);
+        document.getElementById('backToDashboard').addEventListener('click', () => {
+            window.location.href = '/dashboard.html';
+        });
+        
+        // Close modal on outside click
+        document.getElementById('chatsModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('chatsModal')) {
+                closeChatsModal();
+            }
+        });
+
+        // Initialize on load
+        init();
+        
+        // Refresh chats periodically
+        setInterval(async () => {
+            await loadPersistentChats();
+            await loadExplorePartners();
+            updateStats();
+        }, 30000);
+    </script>
+</body>
+</html>

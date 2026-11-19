@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎭 Mystery Connect - Sign Up & Login</title>
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/mobile-optimized.css">
+    <style>
+        /* 🔧 ADDED: Date picker styling */
+        input[type="date"] {
+            width: 100%;
+            padding: 14px 45px 14px 15px;
+            background: rgba(26, 32, 44, 0.8);
+            border: 2px solid rgba(107, 70, 193, 0.3);
+            border-radius: 12px;
+            color: #E2E8F0;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        input[type="date"]:focus {
+            outline: none;
+            border-color: #6B46C1;
+            box-shadow: 0 0 0 3px rgba(107, 70, 193, 0.1);
+        }
+        
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.7);
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+        
+        input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+        
+        /* 🔧 ADDED: Password strength colors */
+        .strength-bar.weak { background: #E53E3E; }
+        .strength-bar.medium { background: #D69E2E; }
+        .strength-bar.strong { background: #48BB78; }
+        
+        /* 🔧 ADDED: Recovery code modal */
+        .recovery-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        
+        .recovery-modal-content {
+            background: linear-gradient(135deg, #1A202C 0%, #2D3748 100%);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            border: 2px solid #6B46C1;
+            text-align: center;
+        }
+        
+        .recovery-code-display {
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px dashed #D69E2E;
+            margin: 20px 0;
+        }
+        
+        .recovery-code {
+            font-size: 2.5rem;
+            font-weight: bold;
+            letter-spacing: 5px;
+            color: #D69E2E;
+            font-family: monospace;
+        }
+        
+        .warning-text {
+            color: #FC8181;
+            font-size: 0.9rem;
+            margin-top: 15px;
+        }
+        
+        .copy-btn {
+            background: #6B46C1;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background: #805AD5;
+            transform: translateY(-2px);
+        }
+        
+        .close-modal-btn {
+            background: #4A5568;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <!-- 🔧 ADDED: Recovery Code Modal -->
+    <div class="recovery-modal" id="recoveryModal">
+        <div class="recovery-modal-content">
+            <h2 style="color: #D69E2E; margin-bottom: 20px;">
+                <i class="fas fa-key"></i> Your Recovery Code
+            </h2>
+            <p style="color: #CBD5E0; margin-bottom: 20px;">
+                This is your ONE-TIME recovery code. Save it somewhere safe!
+            </p>
+            <div class="recovery-code-display">
+                <div class="recovery-code" id="modalRecoveryCode">XXXX-XXXX-XXXX</div>
+            </div>
+            <p class="warning-text">
+                <i class="fas fa-exclamation-triangle"></i> 
+                This code will NOT be shown again. Write it down or copy it now!
+            </p>
+            <div>
+                <button class="copy-btn" onclick="copyModalRecoveryCode()">
+                    <i class="fas fa-copy"></i> Copy Code
+                </button>
+                <button class="close-modal-btn" onclick="closeRecoveryModal()">
+                    <i class="fas fa-check"></i> I've Saved It
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="auth-container">
+        <!-- Header -->
+        <div class="auth-header">
+            <h1>Mystery Connect</h1>
+            <p>Where conversations reveal more than profiles</p>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="auth-tabs">
+            <div class="auth-tab active" onclick="showLogin()">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </div>
+            <div class="auth-tab" onclick="showSignup()">
+                <i class="fas fa-user-plus"></i> Sign Up
+            </div>
+        </div>
+        
+        <!-- Forms Content -->
+        <div class="auth-content">
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form active" onsubmit="login(event)">
+                <div class="input-group">
+                    <label for="loginUsername">
+                        <i class="fas fa-user"></i> Username
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="text" id="loginUsername" placeholder="Enter your username" required>
+                        <div class="icon">👤</div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="loginPassword">
+                        <i class="fas fa-lock"></i> Password
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                        <div class="icon">🔒</div>
+                    </div>
+                </div>
+                
+                <!-- 🔧 FIXED: Changed age check to 18+ -->
+                <div class="age-check">
+                    <input type="checkbox" id="loginAge" required>
+                    <label for="loginAge">I am 18 years or older</label>
+                </div>
+        
+                <button type="submit" class="submit-btn" id="loginBtn">
+                    <i class="fas fa-sign-in-alt"></i> Enter the Mystery
+                </button>
+                
+                <div style="text-align: center; margin: 15px 0;">
+                    <a href="#" onclick="showForgotPassword()" style="color: #6B46C1; text-decoration: none;">
+                        <i class="fas fa-question-circle"></i> Forgot Password?
+                    </a>
+                </div>
+                
+                <div id="loginError" class="error-message"></div>
+            </form>
+            
+            <!-- Signup Form -->
+            <form id="signupForm" class="auth-form" onsubmit="signup(event)">
+                <div class="input-group">
+                    <label for="signupUsername">
+                        <i class="fas fa-user"></i> Username
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="text" id="signupUsername" placeholder="Choose a unique username" 
+                               minlength="3" maxlength="20" pattern="[a-zA-Z0-9_]+" required>
+                        <div class="icon">👑</div>
+                    </div>
+                    <small>3-20 characters, letters, numbers, and underscores only</small>
+                </div>
+                
+                <div class="input-group">
+                    <label for="signupEmail">
+                        <i class="fas fa-envelope"></i> Email 
+                        <span class="optional-tag">Optional</span>
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="email" id="signupEmail" placeholder="you@example.com">
+                        <div class="icon">📧</div>
+                    </div>
+                    <small>For password recovery (optional)</small>
+                </div>
+                
+                <!-- 🔧 REPLACED: Age input with Date of Birth picker -->
+                <div class="input-group">
+                    <label for="signupDateOfBirth">
+                        <i class="fas fa-calendar-alt"></i> Date of Birth
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="date" id="signupDateOfBirth" required min="1900-01-01">
+                        <div class="icon">🎂</div>
+                    </div>
+                    <small>You must be 18 or older to use Mystery Connect</small>
+                </div>
+                
+                <div class="input-group">
+                    <label for="signupPassword">
+                        <i class="fas fa-lock"></i> Create Password
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="password" id="signupPassword" placeholder="Strong password" 
+                               minlength="8" required>
+                        <div class="icon">🔐</div>
+                    </div>
+                    <div class="strength-meter">
+                        <div class="strength-bar" id="passwordStrength"></div>
+                    </div>
+                    <small>Min 8 chars, include uppercase, lowercase, number & special char</small>
+                </div>
+                
+                <div class="input-group">
+                    <label for="signupConfirmPassword">
+                        <i class="fas fa-lock"></i> Confirm Password
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="password" id="signupConfirmPassword" placeholder="Repeat password" required>
+                        <div class="icon">🔁</div>
+                    </div>
+                    <div class="match-indicator invalid" id="passwordMatch">
+                        <i class="fas fa-times"></i> Passwords don't match
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>
+                        <i class="fas fa-mask"></i> Choose Your Starting Avatar
+                    </label>
+                    <div class="avatar-selection" id="avatarSelection">
+                        <div class="avatar-option selected" data-avatar="🦊">🦊</div>
+                        <div class="avatar-option" data-avatar="🐼">🐼</div>
+                        <div class="avatar-option" data-avatar="🦉">🦉</div>
+                        <div class="avatar-option" data-avatar="🐱">🐱</div>
+                        <div class="avatar-option" data-avatar="🐯">🐯</div>
+                        <div class="avatar-option" data-avatar="🦁">🦁</div>
+                        <div class="avatar-option" data-avatar="🐰">🐰</div>
+                        <div class="avatar-option" data-avatar="🐻">🐻</div>
+                    </div>
+                    <small>Your mysterious identity in chats</small>
+                </div>
+                
+                <!-- Security Questions -->
+                <div class="input-group">
+                    <label>
+                        <i class="fas fa-shield-alt"></i> Security Question 1
+                    </label>
+                    <div class="input-wrapper">
+                        <select id="securityQuestion1" required>
+                            <option value="">Select a question...</option>
+                            <option value="What was your first pet's name?">What was your first pet's name?</option>
+                            <option value="What city were you born in?">What city were you born in?</option>
+                            <option value="What's your mother's maiden name?">What's your mother's maiden name?</option>
+                            <option value="What was your first school?">What was your first school?</option>
+                            <option value="What's your favorite book?">What's your favorite book?</option>
+                            <option value="What's your favorite movie?">What's your favorite movie?</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>
+                        <i class="fas fa-key"></i> Answer 1
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="text" id="securityAnswer1" placeholder="Your answer" required>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>
+                        <i class="fas fa-shield-alt"></i> Security Question 2
+                    </label>
+                    <div class="input-wrapper">
+                        <select id="securityQuestion2" required>
+                            <option value="">Select a different question...</option>
+                            <option value="What was your first pet's name?">What was your first pet's name?</option>
+                            <option value="What city were you born in?">What city were you born in?</option>
+                            <option value="What's your mother's maiden name?">What's your mother's maiden name?</option>
+                            <option value="What was your first school?">What was your first school?</option>
+                            <option value="What's your favorite book?">What's your favorite book?</option>
+                            <option value="What's your favorite movie?">What's your favorite movie?</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>
+                        <i class="fas fa-key"></i> Answer 2
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="text" id="securityAnswer2" placeholder="Your answer" required>
+                    </div>
+                </div>
+                
+                <!-- 🔧 FIXED: Changed age check to 18+ -->
+                <div class="age-check">
+                    <input type="checkbox" id="signupAgeCheck" required>
+                    <label for="signupAgeCheck">I confirm I am 18 years or older</label>
+                </div>
+                
+                <button type="submit" class="submit-btn" id="signupBtn" disabled>
+                    <i class="fas fa-hat-wizard"></i> Begin the Mystery
+                </button>
+                
+                <div id="signupError" class="error-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 500px;">
+            <h2 style="color: #6B46C1; margin-bottom: 20px;">
+                <i class="fas fa-unlock-alt"></i> Reset Password
+            </h2>
+            
+            <div id="forgotPasswordStep1">
+                <div class="input-group">
+                    <label>Username</label>
+                    <input type="text" id="forgotUsername" placeholder="Enter your username" style="width: 100%; padding: 12px;">
+                </div>
+                <button onclick="verifyUser()" style="width: 100%; padding: 12px; background: #6B46C1; color: white; border: none; border-radius: 8px; margin-top: 15px;">
+                    Verify Account
+                </button>
+            </div>
+            
+            <div id="forgotPasswordStep2" style="display: none;">
+                <p>Answer your security question:</p>
+                <p id="securityQuestionText" style="font-weight: bold; margin: 10px 0;"></p>
+                <input type="text" id="securityAnswer" placeholder="Your answer" style="width: 100%; padding: 12px; margin-bottom: 15px;">
+                
+                <p style="color: #718096; font-size: 0.9rem;">OR enter your recovery code:</p>
+                <input type="text" id="recoveryCodeInput" placeholder="XXXX-XXXX-XXXX" style="width: 100%; padding: 12px; margin-bottom: 15px;">
+                
+                <div class="input-group">
+                    <label>New Password</label>
+                    <input type="password" id="newPassword" placeholder="New password (min 8 chars)" style="width: 100%; padding: 12px;">
+                </div>
+                
+                <button onclick="resetPassword()" style="width: 100%; padding: 12px; background: #38a169; color: white; border: none; border-radius: 8px; margin-top: 15px;">
+                    Reset Password
+                </button>
+            </div>
+            
+            <button onclick="hideForgotPassword()" style="width: 100%; padding: 12px; background: #e2e8f0; color: #4a5568; border: none; border-radius: 8px; margin-top: 10px;">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ========== GLOBAL VARIABLES ==========
+        let selectedAvatar = '🦊';
+        let currentRecoveryCode = '';
+
+        // ========== MODAL FUNCTIONS ==========
+        function showRecoveryModal(code) {
+            currentRecoveryCode = code;
+            document.getElementById('modalRecoveryCode').textContent = code;
+            document.getElementById('recoveryModal').style.display = 'flex';
+        }
+        
+        function closeRecoveryModal() {
+            document.getElementById('recoveryModal').style.display = 'none';
+            // Switch to login tab
+            showLogin();
+            // Clear form
+            document.getElementById('signupForm').reset();
+            document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
+            document.querySelector('[data-avatar="🦊"]').classList.add('selected');
+            selectedAvatar = '🦊';
+        }
+        
+        function copyModalRecoveryCode() {
+            navigator.clipboard.writeText(currentRecoveryCode).then(() => {
+                alert('✅ Recovery code copied to clipboard!');
+            }).catch(() => {
+                // Fallback
+                const textArea = document.createElement('textarea');
+                textArea.value = currentRecoveryCode;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('✅ Recovery code copied!');
+            });
+        }
+
+        // ========== SECURITY FUNCTIONS ==========
+        function generateRecoveryCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for (let i = 0; i < 12; i++) {
+                if (i === 4 || i === 8) {
+                    code += '-';
+                }
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
+        function validateSecurityQuestions() {
+            const q1 = document.getElementById('securityQuestion1').value;
+            const q2 = document.getElementById('securityQuestion2').value;
+            const a1 = document.getElementById('securityAnswer1').value.trim();
+            const a2 = document.getElementById('securityAnswer2').value.trim();
+            
+            if (!q1 || !q2) {
+                showError('signupError', 'Please select both security questions');
+                return false;
+            }
+            
+            if (q1 === q2) {
+                showError('signupError', 'Please select two different security questions');
+                return false;
+            }
+            
+            if (a1.length < 2 || a2.length < 2) {
+                showError('signupError', 'Security answers must be at least 2 characters');
+                return false;
+            }
+            
+            return true;
+        }
+
+        // 🔧 FIXED: Calculate age from date of birth
+        function calculateAge(dateOfBirth) {
+            const birthDate = new Date(dateOfBirth);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            return age;
+        }
+
+        // ========== CORE FUNCTIONS ==========
+        function showLogin() {
+            document.getElementById('loginForm').classList.add('active');
+            document.getElementById('signupForm').classList.remove('active');
+            document.querySelectorAll('.auth-tab')[0].classList.add('active');
+            document.querySelectorAll('.auth-tab')[1].classList.remove('active');
+        }
+
+        function showSignup() {
+            document.getElementById('signupForm').classList.add('active');
+            document.getElementById('loginForm').classList.remove('active');
+            document.querySelectorAll('.auth-tab')[0].classList.remove('active');
+            document.querySelectorAll('.auth-tab')[1].classList.add('active');
+        }
+
+        // Avatar selection
+        document.querySelectorAll('.avatar-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.avatar-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                option.classList.add('selected');
+                selectedAvatar = option.dataset.avatar;
+            });
+        });
+
+        // 🔧 FIXED: Enhanced password strength checker
+        document.getElementById('signupPassword').addEventListener('input', function() {
+            const password = this.value;
+            const strengthBar = document.getElementById('passwordStrength');
+            
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (/[a-z]/.test(password)) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            
+            strengthBar.className = 'strength-bar ';
+            if (password.length === 0) {
+                strengthBar.className = 'strength-bar';
+                strengthBar.style.width = '0%';
+            } else if (strength <= 2) {
+                strengthBar.classList.add('weak');
+                strengthBar.style.width = '33%';
+            } else if (strength <= 4) {
+                strengthBar.classList.add('medium');
+                strengthBar.style.width = '66%';
+            } else {
+                strengthBar.classList.add('strong');
+                strengthBar.style.width = '100%';
+            }
+            
+            checkPasswordMatch();
+        });
+
+        function checkPasswordMatch() {
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('signupConfirmPassword').value;
+            const matchIndicator = document.getElementById('passwordMatch');
+            const signupBtn = document.getElementById('signupBtn');
+            
+            if (confirmPassword.length === 0) {
+                matchIndicator.className = 'match-indicator invalid';
+                matchIndicator.innerHTML = '<i class="fas fa-times"></i> Confirm your password';
+                signupBtn.disabled = true;
+                return;
+            }
+            
+            if (password === confirmPassword && password.length >= 8) {
+                matchIndicator.className = 'match-indicator valid';
+                matchIndicator.innerHTML = '<i class="fas fa-check"></i> Passwords match!';
+                signupBtn.disabled = false;
+            } else {
+                matchIndicator.className = 'match-indicator invalid';
+                matchIndicator.innerHTML = '<i class="fas fa-times"></i> Passwords don\'t match';
+                signupBtn.disabled = true;
+            }
+        }
+
+        document.getElementById('signupConfirmPassword').addEventListener('input', checkPasswordMatch);
+
+        // 🔧 FIXED: Updated validation for date of birth
+        function validateSignup() {
+            const username = document.getElementById('signupUsername').value;
+            const dateOfBirth = document.getElementById('signupDateOfBirth').value;
+            const ageCheck = document.getElementById('signupAgeCheck').checked;
+            
+            if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+                showError('signupError', 'Username can only contain letters, numbers, and underscores');
+                return false;
+            }
+            
+            if (username.length < 3 || username.length > 20) {
+                showError('signupError', 'Username must be 3-20 characters');
+                return false;
+            }
+            
+            if (!dateOfBirth) {
+                showError('signupError', 'Please enter your date of birth');
+                return false;
+            }
+            
+            const age = calculateAge(dateOfBirth);
+            if (age < 18) {
+                showError('signupError', `You must be at least 18 years old (you are ${age})`);
+                return false;
+            }
+            
+            if (age > 120) {
+                showError('signupError', 'Please enter a valid date of birth');
+                return false;
+            }
+            
+            if (!ageCheck) {
+                showError('signupError', 'You must confirm you are 18+');
+                return false;
+            }
+            
+            if (!validateSecurityQuestions()) {
+                return false;
+            }
+            
+            return true;
+        }
+
+        // ========== API CALLS ==========
+        async function login(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const ageCheck = document.getElementById('loginAge').checked;
+            
+            if (!ageCheck) {
+                showError('loginError', 'You must confirm you are 18+');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    localStorage.setItem('mysteryToken', data.token);
+                    localStorage.setItem('mysteryUser', JSON.stringify(data.user));
+                    localStorage.setItem('profileCompleted', data.profileCompleted ? 'true' : 'false');
+                    
+                    if (data.profileCompleted) {
+                        window.location.href = 'dashboard.html';
+                    } else {
+                        window.location.href = 'complete-profile.html';
+                    }
+                } else {
+                    showError('loginError', data.message || 'Login failed');
+                }
+            } catch (error) {
+                showError('loginError', 'Network error. Is the server running?');
+                console.error('Login error:', error);
+            }
+        }
+
+        // 🔧 FIXED: Updated signup to use dateOfBirth
+        async function signup(event) {
+            event.preventDefault();
+            
+            if (!validateSignup()) return;
+            
+            const username = document.getElementById('signupUsername').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const dateOfBirth = document.getElementById('signupDateOfBirth').value;
+            const avatar = selectedAvatar;
+            
+            const securityQuestions = [
+                {
+                    question: document.getElementById('securityQuestion1').value,
+                    answer: document.getElementById('securityAnswer1').value.trim()
+                },
+                {
+                    question: document.getElementById('securityQuestion2').value,
+                    answer: document.getElementById('securityAnswer2').value.trim()
+                }
+            ];
+            
+            const userData = { 
+                username, 
+                password, 
+                dateOfBirth, 
+                avatar,
+                securityQuestions
+            };
+            
+            if (email && email.trim() !== '') {
+                userData.email = email.trim();
+            }
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(userData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Show recovery code modal
+                    showRecoveryModal(data.recoveryCode);
+                    
+                    // Clear form
+                    document.getElementById('signupUsername').value = '';
+                    document.getElementById('signupEmail').value = '';
+                    document.getElementById('signupPassword').value = '';
+                    document.getElementById('signupConfirmPassword').value = '';
+                    document.getElementById('signupDateOfBirth').value = '';
+                    document.getElementById('securityAnswer1').value = '';
+                    document.getElementById('securityAnswer2').value = '';
+                    document.getElementById('signupAgeCheck').checked = false;
+                    
+                    // Reset avatar selection
+                    document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
+                    document.querySelector('[data-avatar="🦊"]').classList.add('selected');
+                    selectedAvatar = '🦊';
+                    
+                    // Reset password strength
+                    document.getElementById('passwordStrength').style.width = '0%';
+                    document.getElementById('passwordMatch').className = 'match-indicator invalid';
+                    document.getElementById('passwordMatch').innerHTML = '<i class="fas fa-times"></i> Passwords don\'t match';
+                    document.getElementById('signupBtn').disabled = true;
+                    
+                } else {
+                    showError('signupError', data.message || 'Registration failed');
+                }
+                
+            } catch (error) {
+                showError('signupError', 'Network error. Is the server running?');
+                console.error('Signup error:', error);
+            }
+        }
+
+        function showError(elementId, message, type = 'error') {
+            const errorElement = document.getElementById(elementId);
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            errorElement.style.color = type === 'success' ? '#38a169' : '#e53e3e';
+            
+            if (type === 'error') {
+                errorElement.classList.add('error-shake');
+                setTimeout(() => {
+                    errorElement.classList.remove('error-shake');
+                }, 500);
+            }
+            
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
+
+        // ========== FORGOT PASSWORD FUNCTIONS ==========
+        function showForgotPassword() {
+            document.getElementById('forgotPasswordModal').style.display = 'flex';
+            document.getElementById('forgotPasswordStep1').style.display = 'block';
+            document.getElementById('forgotPasswordStep2').style.display = 'none';
+            document.getElementById('forgotUsername').value = '';
+            document.getElementById('forgotUsername').focus();
+        }
+
+        function hideForgotPassword() {
+            document.getElementById('forgotPasswordModal').style.display = 'none';
+            document.getElementById('forgotUsername').value = '';
+            document.getElementById('securityAnswer').value = '';
+            document.getElementById('recoveryCodeInput').value = '';
+            document.getElementById('newPassword').value = '';
+        }
+
+        async function verifyUser() {
+            const username = document.getElementById('forgotUsername').value.trim();
+            
+            if (!username) {
+                alert('Please enter your username');
+                return;
+            }
+            
+            try {
+                const verifyBtn = document.querySelector('#forgotPasswordStep1 button');
+                verifyBtn.textContent = 'Verifying...';
+                verifyBtn.disabled = true;
+                
+                const response = await fetch('http://localhost:3000/api/auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.hasSecurityQuestion) {
+                        document.getElementById('securityQuestionText').textContent = data.securityQuestion;
+                        document.getElementById('securityAnswer').style.display = 'block';
+                    } else {
+                        document.getElementById('securityQuestionText').textContent = 'No security question set. Use your recovery code:';
+                        document.getElementById('securityAnswer').style.display = 'none';
+                    }
+                    
+                    document.getElementById('forgotPasswordStep1').style.display = 'none';
+                    document.getElementById('forgotPasswordStep2').style.display = 'block';
+                } else {
+                    alert(data.message || 'User not found');
+                }
+            } catch (error) {
+                alert('Error verifying user. Is the server running?');
+                console.error('Verify user error:', error);
+            } finally {
+                const verifyBtn = document.querySelector('#forgotPasswordStep1 button');
+                if (verifyBtn) {
+                    verifyBtn.textContent = 'Verify Account';
+                    verifyBtn.disabled = false;
+                }
+            }
+        }
+
+        async function resetPassword() {
+            const username = document.getElementById('forgotUsername').value.trim();
+            const answer = document.getElementById('securityAnswer').value.trim();
+            const recoveryCode = document.getElementById('recoveryCodeInput').value.trim().toUpperCase();
+            const newPassword = document.getElementById('newPassword').value;
+            
+            if (!newPassword || newPassword.length < 8) {
+                alert('New password must be at least 8 characters');
+                return;
+            }
+            
+            if (!answer && !recoveryCode) {
+                alert('Please provide either security answer or recovery code');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username,
+                        securityAnswer: answer || undefined,
+                        recoveryCode: recoveryCode || undefined,
+                        newPassword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ Password reset successful! Please login with your new password.');
+                    hideForgotPassword();
+                    showLogin();
+                    document.getElementById('loginUsername').value = username;
+                    document.getElementById('loginPassword').focus();
+                } else {
+                    alert(data.message || 'Password reset failed. Check your answer or recovery code.');
+                }
+            } catch (error) {
+                alert('Error resetting password');
+                console.error('Reset password error:', error);
+            }
+        }
+
+        // ========== INITIALIZATION ==========
+        window.onload = function() {
+            const token = localStorage.getItem('mysteryToken');
+            if (token) {
+                const profileCompleted = localStorage.getItem('profileCompleted');
+                
+                if (profileCompleted === 'true') {
+                    window.location.href = 'dashboard.html';
+                    return;
+                } else if (profileCompleted === 'false') {
+                    window.location.href = 'complete-profile.html';
+                    return;
+                }
+                
+                fetch('http://localhost:3000/api/auth/verify', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        localStorage.setItem('profileCompleted', data.user?.profileCompleted ? 'true' : 'false');
+                        
+                        if (data.user?.profileCompleted) {
+                            window.location.href = 'dashboard.html';
+                        } else {
+                            window.location.href = 'complete-profile.html';
+                        }
+                    } else {
+                        localStorage.removeItem('mysteryToken');
+                        localStorage.removeItem('mysteryUser');
+                        localStorage.removeItem('profileCompleted');
+                    }
+                })
+                .catch(() => {
+                    console.log('Server might be down, staying on auth page');
+                });
+            }
+            
+            // Set max date for date picker (18 years ago)
+            const today = new Date();
+            const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+            document.getElementById('signupDateOfBirth').max = maxDate.toISOString().split('T')[0];
+        };
+    </script>
+</body>
+</html>
